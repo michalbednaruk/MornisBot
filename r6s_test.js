@@ -23,7 +23,7 @@ let id;
 let stats;
 let weapons;
 
-client.on('message', msg => {
+client.on('message', async msg => {
     if (msg.channel.name)
         console.log(`>In ${msg.guild.name}, #${msg.channel.name}: ${msg.author.username} said ${msg.content}`);
     else
@@ -41,50 +41,49 @@ client.on('message', msg => {
                 msg.channel.send("not enough arguments");
                 break;
             }
-            retrieveWeapon(line[1], line[2].toUpperCase())
-                .then((result) => {
-                    let embed = new MessageEmbed();
-                    embed.setTitle(result.name);
-                    embed.setDescription(`Kills: ${result.kills}`);
-                    msg.channel.send(embed);
-                })
-                .catch((err) => {
-                    msg.channel.send(err);
-                });
+            try {
+                const result = await retrieveWeapon(line[1], line[2].toUpperCase())
+                let embed = new MessageEmbed()
+                    .setTitle(result.name)
+                    .setDescription(`Kills: ${result.kills}`);
+                msg.channel.send(embed);
+            }
+            catch (err) {
+                msg.channel.send(err);
+            }
             break;
         case "STATS":
             if (line.length < 2) {
                 msg.channel.send("not enough arguments");
                 break;
             }
-            retrieveStats(line[1])
-                .then((result) => {
-                    statsEmbed(result, line[1], msg);
-                })
-                .catch((err) => {
-                    msg.channel.send(err);
-                });
+            try {
+                const result = await retrieveStats(line[1])
+                statsEmbed(result, line[1], msg);
+            }
+            catch (err) {
+                msg.channel.send(err);
+            }
             break;
         case "TYPEKILL":
-                if (line.length < 3) {
-                    msg.channel.send("not enough arguments");
-                    break;
-                }
-            retrieveTypeKills(line[1], line[2].toLowerCase())
-            .then((result) => {
+            if (line.length < 3) {
+                msg.channel.send("not enough arguments");
+                break;
+            }
+            try {
+                const result = await retrieveTypeKills(line[1], line[2].toLowerCase())
                 let embed = new MessageEmbed()
                     .setTitle(`${line[1]}'s kills with ${line[2].toUpperCase()}`)
-                    .addField("Total",result.toString());
+                    .addField("Total", result.toString());
                 msg.channel.send(embed);
-            })
-            .catch((err) => {
+            }
+            catch (err) {
                 msg.channel.send(err);
-            })
+            }
             break;
         case "HELP":
             help(msg)
             break;
-
     }
 });
 
@@ -97,7 +96,6 @@ async function retrieveWeapon(name, weapon) {
     }
     weapons = stats.pvp.weapons;
     for (weaponType in weapons) {
-        //console.log(weaponType);
         for (let i = 0; i < weapons[weaponType].list.length; i++) {
             if (weapons[weaponType].list[i].name.toUpperCase().replace(/\s/g, '') === weapon) {
                 result = weapons[weaponType].list[i];
@@ -105,7 +103,6 @@ async function retrieveWeapon(name, weapon) {
                 break;
             }
         }
-        //console.log(weapons[weaponType].list);
     }
 
     if (!result) {
@@ -117,28 +114,24 @@ async function retrieveWeapon(name, weapon) {
     return result;
 }
 
-function loadUser(name) {
+async function loadUser(name) {
+    try {
+        const user = await r6api.getId(platform, name)
 
-    return new Promise((resolve, reject) => {
-        r6api.getId(platform, name)
-            .then(user => {
-                if (!user[0]) {
-                    reject("user not found");
-                }
-                id = user[0].userId
-                r6api.getStats(platform, id)
-                    .then(statistics => {
-                        stats = statistics[0];
-                        console.log('User Retrieved');
-                        resolve('success');
-                    });
-            }
-            ).catch((error) => {
-                reject(error);
-            })
-    });
+        if (!user[0])
+            throw "User not found";
+        id = user[0].userId
+
+        stats = (await r6api.getStats(platform, id))[0];
+        console.log("User Retrieved");
+
+        return stats;
+    }
+    catch (err) {
+        console.log(err)
+        throw err;
+    }
 }
-
 
 async function retrieveStats(name) {
     try {
@@ -152,22 +145,20 @@ async function retrieveStats(name) {
 
 async function statsEmbed(result, name, msg) {
 
-    let embed = new MessageEmbed();
-
-    embed.setTitle(`General Stats for ${name}`);
-    embed.addField("Kills", result.kills, true)
-    embed.addField("Deaths", result.deaths, true)
-    embed.addField("K/D Ratio", (result.kills / result.deaths).toPrecision(3), true);
-    embed.addField("Wins", result.wins, true)
-    embed.addField("Losses", result.losses, true)
-    embed.addField("Win %", ((result.wins / result.matches) * 100).toPrecision(4) + "%", true)
+    let embed = new MessageEmbed()
+        .setTitle(`General Stats for ${name}`)
+        .addField("Kills", result.kills, true)
+        .addField("Deaths", result.deaths, true)
+        .addField("K/D Ratio", (result.kills / result.deaths).toPrecision(3), true)
+        .addField("Wins", result.wins, true)
+        .addField("Losses", result.losses, true)
+        .addField("Win %", ((result.wins / result.matches) * 100).toPrecision(4) + "%", true)
 
     msg.channel.send(embed);
-
 }
 
 
-async function retrieveTypeKills(name, weaponType){
+async function retrieveTypeKills(name, weaponType) {
     try {
         await loadUser(name)
     } catch (err) {
@@ -176,19 +167,19 @@ async function retrieveTypeKills(name, weaponType){
     weapons = stats.pvp.weapons;
 
 
-    if(!weapons[weaponType]){
+    if (!weapons[weaponType]) {
         throw "that type doesn't exist";
     }
     let sum = 0;
-    for(gun of weapons[weaponType].list){
-        sum += gun.kills;   
+    for (gun of weapons[weaponType].list) {
+        sum += gun.kills;
     }
     console.log(sum);
     return sum;
 
 }
 
-async function help(msg){
+async function help(msg) {
     let embed = new MessageEmbed();
     embed.setTitle(`Help:`);
     embed.setDescription(`"weapon": Show amount of kills with specific weapon. eg. "çweapon Mornis mpx"
