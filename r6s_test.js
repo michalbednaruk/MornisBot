@@ -8,15 +8,16 @@ client.login(process.env.BOT_TOKEN);
 
 client.on('ready', () => {
     console.log(`Logged in as ${client.user.tag}!`);
-    client.user.setActivity('Prefix: ç')
-    .then(presence => console.log(`Activity set to ${presence.activities[0].name}`))
-    .catch(console.error);
+    client.user.setActivity(`Prefix: ${process.env.SYMBOL}`)
+        .then(presence => console.log(`Activity set to ${presence.activities[0].name}`))
+        .catch(console.error);
 });
 
 /*const rl = require('readline').createInterface({
     input: process.stdin,
     output: process.stdout
 });*/
+
 const R6API = require('r6api.js');
 const r6api = new R6API(process.env.R6S_EMAIL, process.env.R6S_PASSWORD);
 
@@ -91,26 +92,26 @@ client.on('message', async msg => {
             retrieveStatus(msg)
             break;
         case "OPERATOR":
-            if(line.length < 3){
+            if (line.length < 3) {
                 msg.channel.send("not enough arguments")
                 break;
             }
-            if(line[2].toLowerCase() === "nökk") line[2] = "nokk"
-            if(line[2].toLowerCase() === "jäger") line[2] = "jager"
+            if (line[2].toLowerCase() === "nökk") line[2] = "nokk"
+            if (line[2].toLowerCase() === "jäger") line[2] = "jager"
 
-            try{
-                
+            try {
+
                 let operator = await retrieveOperator(line[1], line[2].toLowerCase())
                 operatorStatsEmbed(operator, line[1], line[2].toLowerCase(), msg)
             }
-            catch(err) {
+            catch (err) {
                 msg.channel.send(err)
             }
             break;
     }
 });
 
-async function retrieveWeapon(name, weapon) {
+async function retrieveWeapon(name, lookingfor) {
     let result;
     try {
         await loadUser(name)
@@ -119,10 +120,10 @@ async function retrieveWeapon(name, weapon) {
     }
     weapons = stats.pvp.weapons;
     for (weaponType in weapons) {
-        for (let i = 0; i < weapons[weaponType].list.length; i++) {
-            if (weapons[weaponType].list[i].name.toUpperCase().replace(/\s/g, '') === weapon) {
-                result = weapons[weaponType].list[i];
-                break;
+        for (let weapon of weapons[weaponType].list) {
+            if (weapon.name.toUpperCase().replace(/\s/g, '') === lookingfor) {
+                result = weapon
+                break
             }
         }
     }
@@ -188,13 +189,12 @@ async function retrieveTypeKills(name, weaponType) {
     }
     weapons = stats.pvp.weapons;
 
-
     if (!weapons[weaponType]) {
         throw "that type doesn't exist";
     }
     let sum = 0;
-    for (gun of weapons[weaponType].list) {
-        sum += gun.kills;
+    for (weapon of weapons[weaponType].list) {
+        sum += weapon.kills;
     }
     //console.log(sum);
     return sum;
@@ -204,7 +204,7 @@ async function retrieveTypeKills(name, weaponType) {
 async function help(msg, command) {
 
     let embed = new MessageEmbed();
-    if(!command){
+    if (!command) {
 
         embed.setTitle(`Help:`);
         embed.setDescription("Prefix: `ç` \n\
@@ -212,7 +212,7 @@ async function help(msg, command) {
         For more information about a specific command type `çHelp command`");
         embed.addField("**Commands:**", "`weapon` \n `stats` \n `typekill` \n `status` \n `operator` \n");
 
-    }else if(command.toUpperCase() === "WEAPON"){
+    } else if (command.toUpperCase() === "WEAPON") {
 
         embed.setTitle(`WEAPON`);
         embed.setDescription("This command shows the amount of kills you got with the specified weapon.\n\n\
@@ -228,35 +228,35 @@ async function help(msg, command) {
         embed.addField("Shotguns", await getWeapons("shotgun"), true)
         embed.addField("MPs", await getWeapons("mp"), true)
 
-    }else if(command.toUpperCase() === "STATS"){
+    } else if (command.toUpperCase() === "STATS") {
 
         embed.setTitle(`STATS`);
         embed.setDescription("This command shows your stats, like the amount of total kills you got.\n\n\
         The use is as follows: `çStats *nickname*`")
 
-    }else if(command.toUpperCase() === "TYPEKILL"){
+    } else if (command.toUpperCase() === "TYPEKILL") {
 
         embed.setTitle(`TYPEKILL`);
         embed.setDescription("This command shows you the amount of kills you got with a specific weapon type.\n\n\
         The use is as follows: `çTypekill *nickname* *weapon type*`")
-        embed.addField("**Defined weapon types:**","`Assault` \n `SMG` \n `LMG` \n `Marksman` \n `Pistol` \n `Shotgun` \n `MP`")
+        embed.addField("**Defined weapon types:**", "`Assault` \n `SMG` \n `LMG` \n `Marksman` \n `Pistol` \n `Shotgun` \n `MP`")
 
-    }else if(command.toUpperCase() === "STATUS"){
+    } else if (command.toUpperCase() === "STATUS") {
 
         embed.setTitle(`STATUS`)
         embed.setDescription("This command shows you whether the PC servers are online or offline \n\
         The use is as follows: `çStatus`")
-        
-    }else if(command.toUpperCase() === "OPERATOR"){
+
+    } else if (command.toUpperCase() === "OPERATOR") {
 
         let string = "`" + (await getOperators()).join("`, `") + "`"
 
         embed.setTitle(`OPERATOR`)
         embed.setDescription("This command shows you your stats with a specific operator.\n\n\
         The use is as follows: `çOperator *nickname* *operator*`")
-        embed.addField("**Defined operators:**",string, true)
+        embed.addField("**Defined operators:**", string, true)
 
-    }else{
+    } else {
 
         msg.channel.send("Unknown command");
 
@@ -267,7 +267,7 @@ async function help(msg, command) {
 
 
 
-async function retrieveStatus(msg){
+async function retrieveStatus(msg) {
 
     let result = await r6api.getStatus();
     let embed = new MessageEmbed()
@@ -277,7 +277,7 @@ async function retrieveStatus(msg){
 
 }
 
-async function retrieveOperator(name, operator){
+async function retrieveOperator(name, operator) {
 
     try {
         await loadUser(name)
@@ -295,19 +295,19 @@ async function retrieveOperator(name, operator){
 }
 
 async function operatorStatsEmbed(result, username, operator, msg) {
-    
-    async function calcRatio (x, y){
+
+    async function calcRatio(x, y) {
 
         let result;
-        
-        if(x === 0 && y === 0) result = 1.00
-        else if(y === 0) result = (Math.round((x / 1) * 100)) / 100
+
+        if (x === 0 && y === 0) result = 1.00
+        else if (y === 0) result = (Math.round((x / 1) * 100)) / 100
         else result = (Math.round((x / y) * 100)) / 100
-    
+
         return result
-    
+
     }
-    
+
     let kdRatio = await calcRatio(result[operator].kills, result[operator].deaths)
 
     let winPercentage = ((result[operator].wins / (result[operator].wins + result[operator].losses)) * 100).toPrecision(4)
@@ -322,44 +322,44 @@ async function operatorStatsEmbed(result, username, operator, msg) {
         .addField("Losses", result[operator].losses, true)
         .addField("Win %", winPercentage + "%", true)
 
-        for(gadget of result[operator].gadget){
-            console.log(gadget)
-            if(gadget.name === "Bullets Blocked by Extended Shield") {
-                embed.addField("Bullets Blocked", gadget.value, true)
-                break;
-            }
-
+    for (gadget of result[operator].gadget) {
+        console.log(gadget)
+        if (gadget.name === "Bullets Blocked by Extended Shield") {
+            embed.addField("Bullets Blocked", gadget.value, true)
+            break;
         }
-        
 
-        msg.channel.send(embed);
+    }
+
+
+    msg.channel.send(embed);
 }
 
-async function getOperators(){
+async function getOperators() {
     try {
-        if(!stats) await loadUser("Mornis")
+        if (!stats) await loadUser("Mornis")
     } catch (err) {
         throw err;
     }
     operators = stats.pvp.operators
     let keys = []
-    for(let key in operators){
+    for (let key in operators) {
         keys.push(key)
     }
     return keys;
 }
 
-async function getWeapons(weaponType){
+async function getWeapons(weaponType) {
     try {
-        if(!stats) await loadUser("Mornis")
+        if (!stats) await loadUser("Mornis")
     } catch (err) {
         throw err;
     }
     weapons = stats.pvp.weapons
     let str = "";
-        for (let i = 0; i < weapons[weaponType].list.length; i++) {
-            str += "`" + weapons[weaponType].list[i].name + "` \n ";
-        }
+    for (let weapon of weapons[weaponType].list) {
+        str += "`" + weapon.name + "` \n ";
+    }
     //console.log(str)
     return str;
 }
