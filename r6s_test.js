@@ -13,10 +13,10 @@ client.on('ready', () => {
     .catch(console.error);
 });
 
-const rl = require('readline').createInterface({
+/*const rl = require('readline').createInterface({
     input: process.stdin,
     output: process.stdout
-});
+});*/
 const R6API = require('r6api.js');
 const r6api = new R6API(process.env.R6S_EMAIL, process.env.R6S_PASSWORD);
 
@@ -101,7 +101,6 @@ client.on('message', async msg => {
             try{
                 
                 let operator = await retrieveOperator(line[1], line[2].toLowerCase())
-                //console.log(operator)
                 operatorStatsEmbed(operator, line[1], line[2].toLowerCase(), msg)
             }
             catch(err) {
@@ -203,62 +202,64 @@ async function retrieveTypeKills(name, weaponType) {
 }
 
 async function help(msg, command) {
-    let user = "Mornis";
+
     let embed = new MessageEmbed();
     if(!command){
+
         embed.setTitle(`Help:`);
         embed.setDescription("Prefix: `ç` \n\
         This bot is made to work only with PC servers. Console players will not be able to use it properly. \n\
         For more information about a specific command type `çHelp command`");
         embed.addField("**Commands:**", "`weapon` \n `stats` \n `typekill` \n `status` \n `operator` \n");
+
     }else if(command.toUpperCase() === "WEAPON"){
-        /*let assaultString = "`" + (await getWeapons(user, "assault")).join("`, `") + "`";
-        let smgString = "`" + (await getWeapons(user, "smg")).join("`, `") + "`";
-        let lmgString = "`" + (await getWeapons(user, "lmg")).join("`, `") + "`";
-        let marksmanString = "`" + (await getWeapons(user, "marksman")).join("`, `") + "`";
-        let pistolString = "`" + (await getWeapons(user, "pistol")).join("`, `") + "`";
-        let shotgunString = "`" + (await getWeapons(user, "shotgun")).join("`, `") + "`";
-        let mpString = "`" + (await getWeapons(user, "mp")).join("`, `") + "`";*/
+
         embed.setTitle(`WEAPON`);
         embed.setDescription("This command shows the amount of kills you got with the specified weapon.\n\n\
         The use is as follows: `çWeapon *nickname* *weapon*`\n\
         **Important: The weapon names need to be written without spaces** \n\
         These are the available weapons for this command:")
-        embed.addField("Assault Rifles","`L85A2` \n `F2` \n `416-C CARBINE` \n `R4-C` \n `556XI` \n `Type-89` \n `552 Commando` \n `PARA-308` \n `AR33` \n `G36C` \n `C8-SFW` \n `M4` \n `M762` \n `C7E` \n `AK-12` \n `MK17 CQB` \n `AUG A2` \n `v308` \n `AK-74M` \n `Commando 9` \n `AR-15.50` \n `F90` \n `ARX200` \n `SPEAR .308`", true)        
-        embed.addField("SMGs","`MPX` \n `MP7` \n `MP5` \n `UMP45` \n `Vector .45 ACP` \n `M12` \n `SMG-12` \n `Scorpion EVO 3 A1` \n `MP5K` \n `9x19VSN` \n `P90` \n `K1A` \n `9mm C1` \n `Mx4 Storm` \n `T-5 SMG` \n `MP5SD` \n `FMG-9` \n `AUG A3` \n `PDW9` \n `P10 RONI`", true)        
-        embed.addField("Pistols","`M45 MEUSOC` \n `P12` \n `LFP586` \n `P226 MK 25` \n `D-50` \n `P9` \n `PRB92` \n `MK1 9mm` \n `GSH-18` \n `PMM` \n `RG15` \n `Keratos .357` \n `Q-929` \n `.44 Mag Semi-Auto` \n `5.7 USG` \n `P229` \n `USP40` \n `SDP 9mm` \n `P-10C` \n `Bailif 410` \n `1911 TACOPS`", true)        
-        embed.addField("LMGs","`ALDA 5.56` \n `G8A1` \n `6P41` \n `T-95 LSW` \n `LMG-E` \n `M249` \n `M249 SAW`", true)        
-        embed.addField("Marksman Rifles","`OTs-03` \n `CAMRS` \n `Mk 14 EBR` \n `417` \n `SR-25` \n `CSRX 300`", true)         
-        embed.addField("Shotguns","`M590A1` \n `ITA12S` \n `M1014` \n `M870` \n `Super 90` \n `Supernova` \n `SPAS-15` \n `SG-CQB` \n `SIX12` \n `SASG-12` \n `BOSG.12.2` \n `SPAS-12` \n `Super Shorty` \n `SIX12 SD` \n `FO-12` \n `ITA12L` \n `ACS12` \n `TCSG12`", true)
-        embed.addField("MPs","`SMG-11` \n `Bearing 9` \n `SPSMG9` \n `C75 Auto`", true)
-        /*embed.addField("Assault Rifles:", assaultString)
-        embed.addField("SMGs:", smgString)
-        embed.addField("Pistols", pistolString)
-        embed.addField("LMGs", lmgString)
-        embed.addField("Marksman Rifles", marksmanString)
-        embed.addField("Shotguns", shotgunString)
-        embed.addField("MPs", mpString)*/
+
+        embed.addField("Assault Rifles:", await getWeapons("assault"), true)
+        embed.addField("SMGs:", await getWeapons("smg"), true)
+        embed.addField("Pistols", await getWeapons("pistol"), true)
+        embed.addField("LMGs", await getWeapons("lmg"), true)
+        embed.addField("Marksman Rifles", await getWeapons("marksman"), true)
+        embed.addField("Shotguns", await getWeapons("shotgun"), true)
+        embed.addField("MPs", await getWeapons("mp"), true)
+
     }else if(command.toUpperCase() === "STATS"){
+
         embed.setTitle(`STATS`);
         embed.setDescription("This command shows your stats, like the amount of total kills you got.\n\n\
         The use is as follows: `çStats *nickname*`")
+
     }else if(command.toUpperCase() === "TYPEKILL"){
+
         embed.setTitle(`TYPEKILL`);
         embed.setDescription("This command shows you the amount of kills you got with a specific weapon type.\n\n\
         The use is as follows: `çTypekill *nickname* *weapon type*`")
         embed.addField("**Defined weapon types:**","`Assault` \n `SMG` \n `LMG` \n `Marksman` \n `Pistol` \n `Shotgun` \n `MP`")
+
     }else if(command.toUpperCase() === "STATUS"){
+
         embed.setTitle(`STATUS`)
         embed.setDescription("This command shows you whether the PC servers are online or offline \n\
         The use is as follows: `çStatus`")
+        
     }else if(command.toUpperCase() === "OPERATOR"){
-        let string = "`" + (await getOperators(user)).join("`, `") + "`"
+
+        let string = "`" + (await getOperators()).join("`, `") + "`"
+
         embed.setTitle(`OPERATOR`)
         embed.setDescription("This command shows you your stats with a specific operator.\n\n\
         The use is as follows: `çOperator *nickname* *operator*`")
         embed.addField("**Defined operators:**",string, true)
+
     }else{
+
         msg.channel.send("Unknown command");
+
     }
 
     msg.channel.send(embed);
@@ -267,14 +268,17 @@ async function help(msg, command) {
 
 
 async function retrieveStatus(msg){
+
     let result = await r6api.getStatus();
     let embed = new MessageEmbed()
         .setTitle("Server Status for PC")
         .setDescription(`The servers are currently ${result.PC.Status}`);
     msg.channel.send(embed);
+
 }
 
 async function retrieveOperator(name, operator){
+
     try {
         await loadUser(name)
     } catch (err) {
@@ -285,29 +289,55 @@ async function retrieveOperator(name, operator){
     if (!operators[operator]) {
         throw "that operator doesn't exist";
     }
-    
     //console.log(sum);
     return operators;
+
 }
 
 async function operatorStatsEmbed(result, username, operator, msg) {
     
+    async function calcRatio (x, y){
+
+        let result;
+        
+        if(x === 0 && y === 0) result = 1.00
+        else if(y === 0) result = (Math.round((x / 1) * 100)) / 100
+        else result = (Math.round((x / y) * 100)) / 100
+    
+        return result
+    
+    }
+    
+    let kdRatio = await calcRatio(result[operator].kills, result[operator].deaths)
+
+    let winPercentage = ((result[operator].wins / (result[operator].wins + result[operator].losses)) * 100).toPrecision(4)
+
     let embed = new MessageEmbed()
         .setTitle(`${result[operator].name} stats for ${username}`)
         .setImage(result[operator].badge)
         .addField("Kills", result[operator].kills, true)
         .addField("Deaths", result[operator].deaths, true)
-        .addField("K/D Ratio", (result[operator].kills / result[operator].deaths).toPrecision(3), true)
+        .addField("K/D Ratio", kdRatio, true)
         .addField("Wins", result[operator].wins, true)
         .addField("Losses", result[operator].losses, true)
-        .addField("Win %", ((result[operator].wins / (result[operator].wins + result[operator].losses)) * 100).toPrecision(4) + "%", true)
+        .addField("Win %", winPercentage + "%", true)
 
-    msg.channel.send(embed);
+        for(gadget of result[operator].gadget){
+            console.log(gadget)
+            if(gadget.name === "Bullets Blocked by Extended Shield") {
+                embed.addField("Bullets Blocked", gadget.value, true)
+                break;
+            }
+
+        }
+        
+
+        msg.channel.send(embed);
 }
 
-async function getOperators(user){
+async function getOperators(){
     try {
-        await loadUser(user)
+        if(!stats) await loadUser("Mornis")
     } catch (err) {
         throw err;
     }
@@ -319,16 +349,17 @@ async function getOperators(user){
     return keys;
 }
 
-async function getWeapons(user, weaponType){
+async function getWeapons(weaponType){
     try {
-        await loadUser(user)
+        if(!stats) await loadUser("Mornis")
     } catch (err) {
         throw err;
     }
-    weapons = stats.pvp.weapons[weaponType]
-    let keys = []
-    for (key in weapons.name){
-        keys.push(key);
-    }
-    return keys;
+    weapons = stats.pvp.weapons
+    let str = "";
+        for (let i = 0; i < weapons[weaponType].list.length; i++) {
+            str += "`" + weapons[weaponType].list[i].name + "` \n ";
+        }
+    //console.log(str)
+    return str;
 }
