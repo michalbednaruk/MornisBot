@@ -8,7 +8,7 @@ client.login(process.env.BOT_TOKEN);
 
 client.on('ready', () => {
     console.log(`Logged in as ${client.user.tag}!`);
-    client.user.setActivity(`Prefix: ${process.env.SYMBOL}`)
+    client.user.setActivity(`Rainbow Six Siege | Prefix: ${process.env.SYMBOL}`)
         .then(presence => console.log(`Activity set to ${presence.activities[0].name}`))
         .catch(console.error);
 });
@@ -108,8 +108,31 @@ client.on('message', async msg => {
                 msg.channel.send(err)
             }
             break;
+        case "COMPARE":
+            if (line.length < 3) {
+                msg.channel.send("not enough arguments");
+                break;
+            }
+            try {
+                const statsA = await retrieveStats(line[1])
+                const statsB = await retrieveStats(line[2])
+
+                compareStatsEmbed(statsA, statsB, line[1], line[2], msg)
+            }
+            catch (err) {
+                msg.channel.send(err);
+            }
+
+
+            break;
     }
 });
+
+async function UpperCaseFirstLetter(string){
+    let result = string[0].toUpperCase() + string.slice(1)
+
+    return result
+}
 
 async function retrieveWeapon(name, lookingfor) {
     let result;
@@ -167,9 +190,9 @@ async function retrieveStats(name) {
 }
 
 async function generalStatsEmbed(result, name, msg) {
-
+    let user = await UpperCaseFirstLetter(name)
     let embed = new MessageEmbed()
-        .setTitle(`General Stats for ${name}`)
+        .setTitle(`General Stats for ${user}`)
         .addField("Kills", result.kills, true)
         .addField("Deaths", result.deaths, true)
         .addField("K/D Ratio", (result.kills / result.deaths).toPrecision(3), true)
@@ -190,13 +213,12 @@ async function retrieveTypeKills(name, weaponType) {
     weapons = stats.pvp.weapons;
 
     if (!weapons[weaponType]) {
-        throw "that type doesn't exist";
+        throw "that category doesn't exist";
     }
     let sum = 0;
     for (weapon of weapons[weaponType].list) {
         sum += weapon.kills;
     }
-    //console.log(sum);
     return sum;
 
 }
@@ -210,7 +232,7 @@ async function help(msg, command) {
         embed.setDescription("Prefix: `ç` \n\
         This bot is made to work only with PC servers. Console players will not be able to use it properly. \n\
         For more information about a specific command type `çHelp command`");
-        embed.addField("**Commands:**", "`weapon` \n `stats` \n `typekill` \n `status` \n `operator` \n");
+        embed.addField("**Commands:**", "`weapon` \n `stats` \n `typekill` \n `status` \n `operator` \n `compare` \n");
 
     } else if (command.toUpperCase() === "WEAPON") {
 
@@ -256,7 +278,13 @@ async function help(msg, command) {
         The use is as follows: `çOperator *nickname* *operator*`")
         embed.addField("**Defined operators:**", string, true)
 
-    } else {
+    } else if (command.toUpperCase() === "COMPARE") { 
+
+        embed.setTitle(`COMPARE`)
+        embed.setDescription("This command lets you easily compare 2 players' stats \n\
+        The use is as follows: `çCompare *user1* *user2*`")
+
+    }else {
 
         msg.channel.send("Unknown command");
 
@@ -285,17 +313,16 @@ async function retrieveOperator(name, operator) {
         throw err
     }
     operators = stats.pvp.operators;
-    //console.log(operators)
     if (!operators[operator]) {
         throw "that operator doesn't exist";
     }
-    //console.log(sum);
     return operators;
 
 }
 
 async function operatorStatsEmbed(result, username, operator, msg) {
-
+    let operatorName = await UpperCaseFirstLetter(result[operator].name)
+    let user = await UpperCaseFirstLetter(username)
     async function calcRatio(x, y) {
 
         let result;
@@ -313,8 +340,8 @@ async function operatorStatsEmbed(result, username, operator, msg) {
     let winPercentage = ((result[operator].wins / (result[operator].wins + result[operator].losses)) * 100).toPrecision(4)
 
     let embed = new MessageEmbed()
-        .setTitle(`${result[operator].name} stats for ${username}`)
-        .setImage(result[operator].badge)
+        .setTitle(`${operatorName} stats for ${user}`)
+        .setThumbnail(result[operator].badge)
         .addField("Kills", result[operator].kills, true)
         .addField("Deaths", result[operator].deaths, true)
         .addField("K/D Ratio", kdRatio, true)
@@ -323,12 +350,7 @@ async function operatorStatsEmbed(result, username, operator, msg) {
         .addField("Win %", winPercentage + "%", true)
 
     for (gadget of result[operator].gadget) {
-        console.log(gadget)
-        if (gadget.name === "Bullets Blocked by Extended Shield") {
-            embed.addField("Bullets Blocked", gadget.value, true)
-            break;
-        }
-
+        embed.addField(gadget.name, gadget.value, true)
     }
 
 
@@ -360,6 +382,47 @@ async function getWeapons(weaponType) {
     for (let weapon of weapons[weaponType].list) {
         str += "`" + weapon.name + "` \n ";
     }
-    //console.log(str)
     return str;
+}
+
+
+async function compareStatsEmbed(statsA, statsB, nameA, nameB, msg){
+    let userA = await UpperCaseFirstLetter(nameA)
+    let userB = await UpperCaseFirstLetter(nameB)
+    async function calcRatio(x, y) {
+
+        let result;
+
+        if (x === 0 && y === 0) result = 1.00
+        else if (y === 0) result = (Math.round((x / 1) * 100)) / 100
+        else result = (Math.round((x / y) * 100)) / 100
+
+        return result
+
+    }
+
+    let kdRatioA = await calcRatio(statsA.kills, statsA.deaths)
+    let kdRatioB = await calcRatio(statsB.kills, statsB.deaths)
+
+    let winPercentageA = await calcRatio(statsA.wins, statsA.matches)
+    let winPercentageB = await calcRatio(statsB.wins, statsB.matches)
+
+    let embed = new MessageEmbed()
+        .setTitle(`Comparing stats of ${userA} and ${userB}`)
+        .setDescription("\
+        **Kills**\n\
+        `" + userA + "`:" + statsA.kills + "  `" + userB + "`:" + statsB.kills + "\n\
+        **Deaths**\n\
+        `" + userA + "`:" + statsA.deaths + "  `" + userB + "`:" + statsB.deaths + "\n\
+        **K/D Ratio**\n\
+        `" + userA + "`:" + kdRatioA + "  `" + userB + "`:" + kdRatioB + "\n\
+        **Wins**\n\
+        `" + userA + "`:" + statsA.wins + "  `" + userB + "`:" + statsB.wins + "\n\
+        **Losses**\n\
+        `" + userA + "`:" + statsA.losses + "  `" + userB + "`:" + statsB.losses + "\n\
+        **Win %**\n\
+        `" + userA + "`:" + winPercentageA * 100 + "%  `" + userB + "`:" + winPercentageB * 100 + "%\n")
+
+    msg.channel.send(embed);
+
 }
